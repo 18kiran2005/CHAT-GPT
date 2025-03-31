@@ -1,0 +1,19 @@
+def build_model(input_dim, output_dim, max_input_length, max_output_length):
+    encoder_input = Input(shape=(max_input_length,))
+    encoder_embedding = Embedding(input_dim=input_dim, output_dim=64)(encoder_input)
+    encoder_lstm = LSTM(128, return_state=True)
+    encoder_output, state_h, state_c = encoder_lstm(encoder_embedding)
+    encoder_states = [state_h, state_c]
+    decoder_input = Input(shape=(max_output_length,))
+    decoder_embedding = Embedding(input_dim=output_dim, output_dim=64)(decoder_input)
+    decoder_lstm = LSTM(128, return_sequences=True, return_state=True)
+    decoder_output, _, _ = decoder_lstm(decoder_embedding, initial_state=encoder_states)
+    decoder_dense = Dense(output_dim, activation='softmax')
+    decoder_output = decoder_dense(decoder_output)
+    model = Model([encoder_input, decoder_input], decoder_output)
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    return model
+input_dim = len(tokenizer.word_index) + 1
+output_dim = len(tokenizer.word_index) + 1
+model = build_model(input_dim, output_dim, max_input_length, max_output_length)
+model.fit([X, y], y, epochs=50, batch_size=16)

@@ -1,0 +1,30 @@
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, LSTM, Embedding, Dense
+from tensorflow.keras.utils import to_categorical
+import nltk
+from flask import Flask, render_template, request
+pairs = [
+    ("Hi", "Hello! How can I help you?"),
+    ("How are you?", "I'm good, thank you! How about you?"),
+    ("What is your name?", "I am a chatbot created to assist you."),
+    ("Tell me a joke", "Why don’t skeletons fight each other? They don’t have the guts!"),
+    ("Bye", "Goodbye! Have a great day!")
+]
+input_sentences = [pair[0] for pair in pairs]
+output_sentences = ['startseq ' + pair[1] + ' endseq' for pair in pairs] 
+nltk.download('punkt')
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(input_sentences + output_sentences)
+input_sequences = tokenizer.texts_to_sequences(input_sentences)
+output_sequences = tokenizer.texts_to_sequences(output_sentences)
+max_input_length = max([len(seq) for seq in input_sequences])
+max_output_length = max([len(seq) for seq in output_sequences])
+X = pad_sequences(input_sequences, maxlen=max_input_length, padding='post')
+y = pad_sequences(output_sequences, maxlen=max_output_length, padding='post')
+y = np.array([to_categorical(seq, num_classes=len(tokenizer.word_index) + 1) for seq in y])
+print(f"Input shape: {X.shape}")
+print(f"Output shape: {y.shape}")
